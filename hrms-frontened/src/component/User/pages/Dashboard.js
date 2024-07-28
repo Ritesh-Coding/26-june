@@ -10,7 +10,8 @@ import DailyLogsApi from "../UI/DailyLogsApi";
 import { useDispatch, useSelector } from 'react-redux';
 import { navbarTitle } from '../../../reducers/authReducer';
 import DateTime from "../../../utils/DateTime";
-
+import Holidays from "../UI/Holidays";
+import BirthDays from "../UI/BirthDays";
 
 const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -19,11 +20,11 @@ const Dashboard = () => {
   const axiosInstance = useAxios();
   const [employeeStatus,setEmployeeStatus]= useState("blank")
   const [isStatusChanged,setIsStatusChanges]= useState("")
-  const  [refreshCount,setRefreshCount]= useState(false)
+  const  [refreshCount,setRefreshCount]= useState(0)
   
   const  handleAllEmployeeLogsRefresh = useCallback(()=>{
     
-    setRefreshCount(true)
+    setRefreshCount(refreshCount+1)
    
   })
  const handleInputChange =(event)=>{
@@ -116,11 +117,9 @@ const Dashboard = () => {
   const logsTitle = "Logs"
   const logsContent = "All Logs"
 
-  const birthDayTitle ="Upcoming BirthDay"
-  const birthDayContent="BirthDay Logs"
 
-  const holidaysTitle = "Holidays"
-  const holidayContent = "Upcoming Holidays"
+
+  
 
   let dateObj = new Date();
 
@@ -132,8 +131,6 @@ const Dashboard = () => {
   
   let year = dateObj.getFullYear();
   let todayDate = day + '/' + month + '/' + year; 
-
-
  
   let buttonList=``;
   switch(employeeStatus)
@@ -189,9 +186,7 @@ const Dashboard = () => {
               <Button variant="info" disabled  value="breakOut" onClick={handleEmployeeActivity}> BreakOut </Button>
               <Button variant="danger" disabled value="checkOut" onClick={handleEmployeeActivity}> checkOut</Button>
               </div>      
-      break
-
-    
+      break   
 
   }    
   
@@ -214,7 +209,7 @@ const Dashboard = () => {
         </div>
         <div
           style={{
-            marginLeft: `80px`,
+            
             marginTop: `50px`,
             display: `flex`,
             flexDirection: `row`,
@@ -222,8 +217,8 @@ const Dashboard = () => {
           }}
         >
 
-          <Card title={birthDayTitle} content={birthDayContent}/> 
-          <Card title={holidaysTitle} content = {holidayContent}/>
+          <BirthDays />
+          <Holidays />
           
         </div>
         <div

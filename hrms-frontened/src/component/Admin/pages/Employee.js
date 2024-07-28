@@ -6,26 +6,48 @@ import * as Yup from 'yup';
 import InputField from '../../../utils/InputField';
 import SelectField from '../../../utils/SelectField';
 import Swal from 'sweetalert2';
-import { TablePagination } from "@mui/material";
+import { Pagination } from '../../../hooks/usePaginationRange';
 import { Link } from 'react-router-dom';
 const Updateemployee = () => {
   const [employee, setEmployee] = useState([]);
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedemployee, setSelectedemployee] = useState(null);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [refresh,setRefresh]=useState(0)
   const axiosInstance = useAxios();
+ 
+  const [name,setName]= useState("")
+  const rowsPerPage =5;
+
+  const handlePageChange = (page)=>{
+    setCurrentPage(page)
+   }
+
+
+  const fetchAllEmployees=(page,name)=>{
+    axiosInstance.get(`api/employees/`,{
+      params:{
+        page,
+        name
+      }
+    }
+    ).then((res) => {
+      setEmployee(res.data["results"]);
+      if (res.data.count === 0){
+        setTotalPages(1);
+      }
+      else{
+      setTotalPages(Math.ceil(res.data.count / rowsPerPage));
+      }
+    }); 
+  }
 
   useEffect(() => {
-    axiosInstance.get(`api/employees/`).then((res) => {
-      setEmployee(res.data);
-    });
-  }, []);
+    fetchAllEmployees(currentPage,name) 
+  }, [refresh,currentPage,name]);
 
-  const handleUpdate = (employee) => {
-    setSelectedemployee(employee);    
-  };
+ 
 
   const handleDelete = (employee) => { 
     setSelectedemployee(employee);
@@ -38,24 +60,14 @@ const Updateemployee = () => {
     try {
       await axiosInstance.delete(`api/employees/${selectedemployee.id}/`);
       setShowDeleteModal(false);
-      setEmployee((prev) => prev.filter((employee) => employee.id !== selectedemployee.id));
+      setRefresh(refresh+1)
+      // setEmployee((prev) => prev.filter((employee) => employee.id !== selectedemployee.id));
     } catch (err) {
       console.error(err);
     }
   };
 
-  
 
-  
-
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
 
   return (
     <div style={{ marginLeft: '260px' }}>
@@ -71,7 +83,7 @@ const Updateemployee = () => {
           </tr>
         </thead>
         <tbody>
-          {employee.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((employee) => (
+          {employee.length>0  && employee.map((employee) => (
             <tr key={employee.id}>
               <th scope="row">{employee.id}</th>
               <td>{employee.username}</td>
@@ -91,16 +103,8 @@ const Updateemployee = () => {
           ))}
         </tbody>
       </table>
-
-      <TablePagination
-        rowsPerPageOptions={[5, 10, 25]}
-        component="div"
-        count={employee.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-      />    
+      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+     
  <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Delete Leave</Modal.Title>

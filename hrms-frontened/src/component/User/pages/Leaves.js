@@ -31,8 +31,10 @@ const Leaves = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [requestStatus,setRequestStatus] = useState("")
-  // const [dateChange,setDateChange]= useState
-  const rowsPerPage =5;
+  const [startDate,setStartDate] = useState("")
+  const [endDate,setEndDate]= useState("")
+  const rowsPerPage =1;
+ 
   
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
@@ -42,10 +44,9 @@ const Leaves = () => {
     let  startDate =  document.getElementById("startDate").value ;
     let  endDate = document.getElementById("endDate").value ;
     if (startDate && endDate){
-        axiosInstance.get(`leave?start_date=${startDate}&end_date=${endDate}`).then((res)=>{
-          setLeaveData(res.data["results"]);
-        })
-        console.log(startDate,endDate)
+      setStartDate(startDate)
+      setEndDate(endDate)
+      setCurrentPage(1)
     }    
   }   
  const handlePageChange = (page)=>{
@@ -55,7 +56,7 @@ const Leaves = () => {
   
   const handleInputChange=(event)=>{
     setRequestStatus(event.target.value)
-      
+    setCurrentPage(1)
   }
   const handleSubmit = async (values, { setSubmitting, setErrors }) => {
     const { date, type, leave_day_type, reason } = values;
@@ -92,34 +93,41 @@ const Leaves = () => {
 
   const axiosInstance  =  useAxios();
   dispatch(navbarTitle({ navTitle: "Leaves" }));
- function fetchLeaveData(page,status){
+ function fetchLeaveData(page,status,start_date,end_date){
 
 
     axiosInstance.get(`leave/`,{     
       params :{
            page,
-           status
-      }
+           status,
+           start_date,
+           end_date,          
+      }   
     }).then((res)=>{
       console.log("these is my result",res.data)
       setLeaveData(res.data["results"]);
+      if (res.data.count === 0){
+        setTotalPages(1);
+      }
+      else{
       setTotalPages(Math.ceil(res.data.count / rowsPerPage));
+      }
     })  
   
  }
   
  
 useEffect(()=>{
-    fetchLeaveData(currentPage,requestStatus)
-},[currentPage,requestStatus])
+    fetchLeaveData(currentPage,requestStatus,startDate,endDate)
+},[currentPage,requestStatus,startDate,endDate])
 // console.log("This is my all leave Data ",leaveData)
   return (
     <>
     <div style={{ marginLeft: "250px" }}>  
     <LeavesDeatils />
-    <br></br>     
-   
-     <Button variant="primary" onClick={handleShow}>
+    <br></br>    
+  
+  <Button variant="primary" onClick={handleShow}>
         Request Leave
   </Button> 
   <Link to="/update-leave"> 

@@ -1,36 +1,47 @@
 from .models import Holiday
 from authApp.models import Employee
 from .serializers import HolidaySerializer, BirthdaySerializer
+from rest_framework import permissions,viewsets,status
+from rest_framework.pagination import PageNumberPagination
 from rest_framework import generics, permissions
 from datetime import date, timedelta
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from django.db.models import Q
 # create by chirag
 
-
-class HolidayListView(generics.ListCreateAPIView):
-    queryset = Holiday.objects.all()
-    serializer_class = HolidaySerializer
-
-    def get_permissions(self):
-        if self.request.method in ["POST"]:
-            self.permission_classes = [permissions.IsAdminUser]
-        else:
-            self.permission_classes = [permissions.AllowAny]
-        return super().get_permissions()
-    
-
-class HolidayDetailView(generics.RetrieveUpdateDestroyAPIView):
-    
-    queryset = Holiday.objects.all()
+class CustomPageNumberPagination(PageNumberPagination):
+    page_size = 1
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+class HolidayAll(viewsets.ModelViewSet):
+   
+    pagination_class = CustomPageNumberPagination
     serializer_class = HolidaySerializer
     authentication_classes = [JWTAuthentication]
-    permission_classes = [permissions.IsAdminUser]
-    permission_classes = [permissions.IsAdminUser]
+    filterset_fields = ['date']
+     
+    
+    def get_queryset(self):
+        search_query= self.request.query_params.get('name', None)
+        queryset = Holiday.objects.all()
+        if search_query:
+            queryset=queryset.filter(
+                Q(name__icontains=search_query)
+            )
+        return queryset
+    
+    def get_permissions(self):
+        if self.request.method in ["POST","PUT","PATCH","DELETE"]:
+            self.permission_classes = [permissions.IsAdminUser]
+        else:
+            self.permission_classes = [permissions.AllowAny]    
+        return super().get_permissions()   
 
 
 class BirthdayListView(generics.ListAPIView):
+    pagination_class = CustomPageNumberPagination
     serializer_class = BirthdaySerializer
-
+    authentication_classes = [JWTAuthentication]
     def get_queryset(self):
         today = date.today()
         # one_month_later = today + timedelta(days=30)

@@ -127,7 +127,7 @@ class DailyAttendanceReportEmployee(viewsets.ModelViewSet):
     serializer_class =  AttendanceSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['date']
-    # pagination_class = CustomPageNumberPagination
+    pagination_class = CustomPageNumberPagination
 
     def get_queryset(self):  
           start_date = self.request.query_params.get('start_date', None)
@@ -197,20 +197,15 @@ class CompanyRelationsEmployee(APIView):
     #         serializer.save()
     #         return Response(serializer.data)
     #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    def patch(self, request, pk, format=None):
-        
+    def patch(self, request, pk, format=None):    
+        data = request.data    
         user = CompanyRelations.objects.filter(id=pk).first()
         serializer = RelationsUpdateSerializer(user,data= request.data,partial=True)
         if serializer.is_valid():
             serializer.save()        
         
-        return Response({"message : Relations Updated Successfuly"})
+        return Response(data)
 
-    def patch(self, request, pk, format=None):
-        data= request.data
-        print("Here is my data",data)
-        CompanyRelations.objects.filter(id=pk).update(**data)
-        return Response({"message : Documents Updated Successfuly"})
 
     def delete(self, request, pk, format=None):
         try:
@@ -238,15 +233,35 @@ class EmployeeDocumentsEmployee(APIView):
 
         serializer = DocumentsSerializer(relations, many=True)
         return Response(serializer.data)
-     def patch(self, request, pk, format=None):        
-        user = EmployeeDocuments.objects.filter(id=pk).first()
-        serializer = DocumentsUpdateSerializer(user,data= request.data,partial=True)
+    
+     def post(self, request, format=None):
+        
+        serializer = DocumentsSerializer(data=request.data, context={'employeeId': request.query_params.get('id', None) or request.user.id})
         if serializer.is_valid():
-            serializer.save()      
-        return Response({"message : Documents Updated Successfuly"})
-     
-     
-
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    
+    #  def patch(self, request, pk, format=None):  
+    #     data= request.data      
+    #     user = EmployeeDocuments.objects.filter(id=pk).first()
+    #     serializer = DocumentsUpdateSerializer(user,data= request.data,partial=True)
+    #     if serializer.is_valid():
+    #         serializer.save()      
+    #     return Response({"message : Documents Updated Successfuly"}) 
+    
+     def patch(self, request, pk, format=None):
+        user = EmployeeDocuments.objects.filter(id=pk).first()
+        if not user:
+            return Response({"error": "Document not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = DocumentsUpdateSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)  # Return updated data
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
 
 class CheckIn(APIView):
     authentication_classes = [JWTAuthentication]

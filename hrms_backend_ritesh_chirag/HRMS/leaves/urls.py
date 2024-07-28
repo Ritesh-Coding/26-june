@@ -11,5 +11,5 @@ router.register(r'update-leave-status',AdminLeaveApproval,basename='update-leave
 urlpatterns = [
     path('', include(router.urls)),
     path('leave-details/',GetLeaveDetails.as_view(),name='leave-details'),
-    path('leave-details/<int:pk>/', GetLeaveDetails.as_view(), name='company-details-update'),
+    path('leave-details/<int:id>/', GetLeaveDetails.as_view(), name='company-details-update'),
 ]

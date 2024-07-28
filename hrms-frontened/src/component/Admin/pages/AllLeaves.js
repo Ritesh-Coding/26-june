@@ -6,40 +6,73 @@ import useAxios from "../../../hooks/useAxios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Button } from "react-bootstrap";
-
+import { Pagination } from "../../../hooks/usePaginationRange";
 const AllLeaves = () => {
  
   const [leaveData,setLeaveData] = useState([])
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [requestStatus,setRequestStatus] = useState("")
+  const [startDate,setStartDate] = useState("")
+  const [endDate,setEndDate]= useState("")
+  const [name,setName] = useState("")
+  const rowsPerPage =5;
   
 
+ 
   function myFunction() {
     let  startDate =  document.getElementById("startDate").value ;
     let  endDate = document.getElementById("endDate").value ;
     if (startDate && endDate){
-        axiosInstance.get(`all-leaves?start_date=${startDate}&end_date=${endDate}`).then((res)=>{
-        setLeaveData(res.data)})
-        console.log(startDate,endDate)
+      setStartDate(startDate)
+      setEndDate(endDate)
+      setCurrentPage(1)
     }    
-  }
-  const handleInputChange=()=>{
-      const myStatus = document.getElementById("statusDropDown")
-      const status = myStatus.value
-      console.log("i am calling",myStatus.value)
-      axiosInstance.get(`all-leaves?status=${status}`).then((res)=>{
-      setLeaveData(res.data)})
+  }  
+  const handleNameChange=(event)=>{
+    setName(event.target.value)
+}
+  const handlePageChange = (page)=>{
+    setCurrentPage(page)
+   }
+  
+   const handleInputChange=(event)=>{
+    setRequestStatus(event.target.value)
+    setCurrentPage(1)
   }
  
   const axiosInstance  =  useAxios();
 
- 
-  useEffect(()=>{
-    axiosInstance.get(`all-leaves/`).then((res)=>{
-      setLeaveData(res.data)
-    })
-},[])
+  function fetchLeaveData(page,status,start_date,end_date,name){
+    axiosInstance.get(`all-leaves/`,{     
+      params :{
+           page,
+           status,
+           start_date,
+           end_date,     
+           name     
+      }   
+    }).then((res)=>{
+      console.log("these is my result",res.data)
+      setLeaveData(res.data["results"]);
+      if (res.data.count === 0){
+        setTotalPages(1);
+      }
+      else{
+      setTotalPages(Math.ceil(res.data.count / rowsPerPage));
+      }
+    })  
+  
+ }
+ useEffect(()=>{
+  fetchLeaveData(currentPage,requestStatus,startDate,endDate,name)
+},[currentPage,requestStatus,startDate,endDate,name])
   return (
     <>
     <div style={{ marginLeft: "250px" }}>  
+    <Button style={{float:`left`}}>
+    <input type="text" onChange={handleNameChange} placeholder='Filter With Name'></input>
+    </Button>
     <div style={{float:`right`}}>
         <Button>
         <input type="date" id="startDate" onChange={myFunction}></input>
@@ -74,8 +107,8 @@ const AllLeaves = () => {
           
         {leaveData.map((leave,index)=>((
         <tr key = {index}>
-          <th scope="row">{leave.employeeDetails[0]["first_name"]}</th>   
-          <th scope="row">{leave.employeeDetails[0]["last_name"]}</th>    
+          <th scope="row">{leave.first_name}</th>   
+          <th scope="row">{leave.last_name}</th>    
           <th scope="row">{leave.type}</th>
           
           <td>{leave.date}</td>
@@ -84,6 +117,7 @@ const AllLeaves = () => {
       </tr>)))}          
         </tbody>
       </table>
+      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
     </div>
     </>
   );

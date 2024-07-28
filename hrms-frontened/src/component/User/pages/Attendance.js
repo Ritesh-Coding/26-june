@@ -6,8 +6,9 @@ import 'react-date-range/dist/theme/default.css'; // theme css file
 import useAxios from '../../../hooks/useAxios';
 import { DateRangePicker } from 'react-date-range';
 import { addDays } from 'date-fns';
-import { TablePagination } from "@mui/material";
+
 import { navbarTitle } from '../../../reducers/authReducer';
+import { Pagination } from '../../../hooks/usePaginationRange';
 import "./page.css"
 const formatDate = (dateString) => {
   if (dateString === "-") return "-";
@@ -34,8 +35,10 @@ const Attendance = () => {
 
   const [attendanceData, setAttendanceData] = useState([]);
   const [isCalender, setIsCalender] = useState(false);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const rowsPerPage =1;
+ 
   const [myDate, setMyDate] = useState([
     {
       startDate: new Date(),
@@ -44,36 +47,43 @@ const Attendance = () => {
     }
   ]);
 
+  const handlePageChange = (page)=>{
+    setCurrentPage(page)
+   }
+
   const axiosInstance = useAxios();
 
   const handleCalenderOpen = () => {
     setIsCalender(!isCalender);
   };
-
-  useEffect(() => {
+  const fetchAttenDanceData=(myDate,isCalender,page)=>{
     const formattedStartDate = getDate(myDate[0].startDate);
     const formattedEndDate = getDate(myDate[0].endDate);
-
+    let start_date=""
+    let end_date=""
     if (isCalender) {
-      axiosInstance.get(`attendanceReport?start_date=${formattedStartDate}&end_date=${formattedEndDate}`).then((res) => {
-        setAttendanceData(res.data);
+        start_date=formattedStartDate
+        end_date = formattedEndDate
+    } 
+      axiosInstance.get(`attendanceReport/`,{
+        params : {
+          page,
+          start_date,
+          end_date
+        }
+      }).then((res) => {
+        setAttendanceData(res.data["results"]);
+        setTotalPages(Math.ceil(res.data.count / rowsPerPage));
       });
-    } else {
-      axiosInstance.get(`attendanceReport/`).then((res) => {
-        setAttendanceData(res.data);
-      });
+  }
+
+  useEffect(() => {
+    fetchAttenDanceData(myDate,isCalender,currentPage)
     }
-  }, [myDate, isCalender]);
+  , [myDate, isCalender,currentPage]);
   console.log("This is my attendance data",attendanceData,)
 
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
 
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
 
   return (
     <div style={{ marginLeft: "250px" }}>
@@ -141,7 +151,7 @@ const Attendance = () => {
           </tr>
         </thead>
         <tbody>
-          {attendanceData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((atten, index) => (
+          { attendanceData.length>0 ?  (attendanceData.map((atten, index) => (
             <tr key={index}>
               <th scope="row">{atten.date}</th>
               <td>{formatDate(atten.entry_time)}</td>
@@ -149,18 +159,16 @@ const Attendance = () => {
               <td>{formatTime(atten.total_break_hours)}</td>
               <td>{formatTime(atten.net_working_hours)}</td>
             </tr>
-          ))}
+          ))):  (
+            <tr>
+            <td colSpan="5">No leave data available</td>
+          </tr>
+          )
+          }
         </tbody>
+
       </table>
-      <TablePagination
-        rowsPerPageOptions={[5, 10, 25]}
-        component="div"
-        count={attendanceData.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-      />
+       <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
     </div>
   );
 };

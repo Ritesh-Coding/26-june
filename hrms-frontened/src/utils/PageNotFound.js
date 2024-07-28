@@ -1,9 +1,10 @@
 import React from 'react';
 import "./PageNotFound.css"
+import { Link } from 'react-router-dom';
 const NotFound = () =>{
     return(
     <div className='errorBody'>   
-    <div>
+    <div style={{marginLeft:`260px`}}>
         <svg width="1123" height="837" viewBox="0 0 1123 837" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect width="1123" height="837" fill="black"/>
             <g id="sky" filter="url(#filter0_d)">
@@ -93,10 +94,10 @@ const NotFound = () =>{
             </defs>
             </svg>
     </div>
-    <div className="text">
+    <div className="text" style={{marginLeft:`260px`}}>
         <h1>404 Error</h1>  
       <h2>Couldn't launch :</h2>
-         <h3>Page Not Found - lets take you <a href="https://twitter.com/namratapdr">BACK</a></h3> 
+         <h3>Page Not Found - lets take you <Link to="/">Click Here</Link></h3> 
     </div>
 
   </div>)

@@ -7,36 +7,68 @@ import Swal from 'sweetalert2';
 import InputField from '../../../utils/InputField';
 import { Formik, Form } from 'formik';
 import SelectField from '../../../utils/SelectField';
+import { Pagination } from '../../../hooks/usePaginationRange';
+import * as Yup from 'yup'
+
+
+const validationSchema = Yup.object({
+  remaining_paid_leave: Yup.number().required('Remaining Paid Leave is required'),
+  remaining_casual_leave: Yup.string().required('Remainning Casual Leave is required'),
+  remaining_unpaid_leave: Yup.string().required('Remaining Unpaid Leave is required'),
+  remaining_sick_leave: Yup.string().required('Remaining Sick Leave is required')
+});
 
 const AssignLeave = () => {
     const [showUpdateModal, setShowUpdateModal] = useState(false);
     const [employee, setEmployee] = useState([]);
     const [selectedLeave,setSelectedLeave] = useState([])
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     const  axiosInstance = useAxios()
     const [employeeDetails,setEmployeeDetails] = useState([])
-
+    const [name,setName]= useState("")
+    const rowsPerPage =5;
 
     const handleUpdate = (leave) => {
         console.log("done",leave)
         setEmployeeDetails(leave)
         axiosInstance.get(`leave-details/?id=${leave.id}`).then((res) => {
           setSelectedLeave(res.data);
-          console.log("????????????????????????",res.data)
-            }).then(()=>{
          
+            }).then(()=>{         
               setShowUpdateModal(true);
             });       
       };
+      const handlePageChange = (page)=>{
+        setCurrentPage(page)
+       }
       
-      
+      const fetchLeaveAssignment=(page,name)=>{
+        axiosInstance.get(`api/employees/`,{
+          params:{
+            page,
+            name
+          }
+        }
+        ).then((res) => {
+          setEmployee(res.data["results"]);
+          if (res.data.count === 0){
+            setTotalPages(1);
+          }
+          else{
+          setTotalPages(Math.ceil(res.data.count / rowsPerPage));
+          }
+        }); 
+      }
       
       
       
       useEffect(() => {
-        axiosInstance.get(`api/employees/`).then((res) => {
-          setEmployee(res.data);
-        });        
-      }, []);
+        fetchLeaveAssignment(currentPage,name) 
+      }, [currentPage,name]);
+      const handleNameChange=(event)=>{
+        setName(event.target.value)
+      }
      
     // useEffect(()=>{
     //   axiosInstance.get(`leave-details/?id=${selectedLeave.id}`).then((res) => {
@@ -47,7 +79,7 @@ const AssignLeave = () => {
       const handleUpdateSubmit = async (values, { setSubmitting, setErrors }) => {
         console.log("Finally i got the latet code ",selectedLeave)
         try {
-          console.log("*-*--*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-",values)
+          // console.log("*-*--*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-",selectedLeave[0]["id"])
           if(selectedLeave.length>0){
             await axiosInstance.patch(`leave-details/${selectedLeave[0]["id"]}/`, values);
             setShowUpdateModal(false);
@@ -56,7 +88,7 @@ const AssignLeave = () => {
             console.log("THis is the post bhai",selectedLeave,values)
             try{  
               console.log("POOOOOOOOOOOOOOOOOOOOOOOOO",employeeDetails)
-              await axiosInstance.post(`leave-details/?id=${employeeDetails["id"]}/`, values);
+              await axiosInstance.post(`leave-details/?id=${employeeDetails["id"]}`, values);
               setShowUpdateModal(false);
             }
             catch(err){
@@ -82,6 +114,9 @@ const AssignLeave = () => {
     
   return (
     <div style={{ marginLeft: "250px" }}> 
+    <Button style={{float:`left`}}>
+    <input type="text" onChange={handleNameChange} placeholder='Filter With Name'></input>
+    </Button>
     <table className="table">
         <thead>
           <tr>
@@ -92,7 +127,7 @@ const AssignLeave = () => {
           </tr>
         </thead>
         <tbody>
-          {employee.map((employeeData) => (
+          {employee.length>0 && employee.map((employeeData) => (
             <tr key={employeeData.id}>
               <th scope="row">{employeeData["id"]}</th>             
               <th scope="row">{employeeData["first_name"]}</th>   
@@ -109,6 +144,7 @@ const AssignLeave = () => {
           ))}
         </tbody>
       </table>
+      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
       <Modal show={showUpdateModal} onHide={() => setShowUpdateModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Update Leave</Modal.Title>
@@ -122,7 +158,7 @@ const AssignLeave = () => {
                 remaining_unpaid_leave:selectedLeave.length>0 ?  selectedLeave[0]["remaining_unpaid_leave"] : "",
                 remaining_sick_leave:selectedLeave.length>0 ?  selectedLeave[0]["remaining_sick_leave"] : "",
               }}
-             
+              validationSchema={validationSchema}
               onSubmit={handleUpdateSubmit}
             >
               {({ values, handleChange, handleBlur, isSubmitting, errors, touched }) => (

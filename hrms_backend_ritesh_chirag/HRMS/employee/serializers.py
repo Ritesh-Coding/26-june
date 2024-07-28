@@ -133,15 +133,8 @@ class EmployeeRelationSerializer(serializers.ModelSerializer):
         employee_id = self.context.get('employeeId')
         print("Finally, I got the id from the URL as", employee_id)
         if not employee_id:
-            raise serializers.ValidationError({"error": "Can't get the employeeId"})
-        
-        if self.instance: 
-            checkExist = CompanyRelations.objects.filter(employee_id_id=employee_id).exclude(id=self.instance.id)
-        else: 
-            checkExist = CompanyRelations.objects.filter(employee_id_id=employee_id)
-        
-        if checkExist.exists():
-            raise serializers.ValidationError({"error": "Already EXIST"})        
+            raise serializers.ValidationError({"error": "Can't get the employeeId"})        
+              
         attrs['employee_id_id'] = employee_id
         return super().validate(attrs)
 
@@ -155,11 +148,7 @@ class DocumentsSerializer(serializers.ModelSerializer):
         employee_id = self.context.get('employeeId')
         print("Finally, I got the id from the URL as", employee_id)
         if not employee_id:
-            raise serializers.ValidationError({"error": "Can't get the employeeId"})
-        if self.instance: 
-            checkExist = EmployeeDocuments.objects.filter(employee_id_id=employee_id).exclude(id=self.instance.id)
-        else: 
-            checkExist = EmployeeDocuments.objects.filter(employee_id_id=employee_id)
+            raise serializers.ValidationError({"error": "Can't get the employeeId"})      
         
         attrs['employee_id_id'] = employee_id
         return super().validate(attrs) 

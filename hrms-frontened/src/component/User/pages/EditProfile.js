@@ -41,20 +41,22 @@ const EditProfile = () => {
     const axiosInstance = useAxios();
     const { userId } = useSelector(state => state.auth)
     const [basicDetails, setBasicDetails] = useState(null)
-    const [update,setUpdate] = useState(false)
+    
     const [employeeDocuments, setEmployeeDocuments] = useState(null)
 
     useEffect(() => {
         axiosInstance.get(`api/employees/${userId}/`).then(
-            (res) => { setBasicDetails(res.data) }
+            (res) => { setBasicDetails(res.data)
+                console.log("This is my basic data via get",res.data)
+             }
         )
 
         axiosInstance.get(`employeeDocuments/`).then(
-                (res) => { setEmployeeDocuments(res.data) }
-        )
- 
-        
-    }, [update])
+                (res) => { setEmployeeDocuments(res.data)
+                    console.log("This is my documents data via get",res.data)
+                 }
+        )        
+    }, [])
     console.log("this is my data",employeeDocuments)
     const genderTypes = [
         { value: 'Male', label: 'Male' },
@@ -62,12 +64,27 @@ const EditProfile = () => {
         { value: 'Other', label: 'Other' },
     ];
 
-    const handleSubmit = async (values, { setSubmitting, setErrors }) => {
+    const handleSubmit = async (values, { setSubmitting, setErrors,setValues }) => {
         try {
             const result = await axiosInstance.patch(`api/employees/${userId}/`, values);
             const data = result.data;
+            console.log("This is basic Employee Data i received from the patch",data)
+            setBasicDetails([data])
+            setValues({
+                username: data.username,
+                first_name:  data.first_name,
+                last_name: data.last_name ,
+                email: data.email,
+                dob: data.dob ,
+                phone_number: data.phone_number,
+                address: data.address,
+                bio:data.bio ,
+                gender:  data.gender
+            })
+
+            console.log(data,"diufhuisdhufhgishidfhizs")
             Swal.fire('Success!', 'Basic Details is Updated Successfully!', 'success');
-            setUpdate(true)
+           
         } catch (err) {
             console.error(err);
             if (err.response && err.response.data && err.response.data.username) {
@@ -81,13 +98,13 @@ const EditProfile = () => {
     };
 
 
-    const handleDocumentsSubmit = async (values, { setSubmitting, setErrors }) => {
+    const handleDocumentsSubmit = async (values, { setSubmitting, setErrors ,setValues}) => {
         const formData = new FormData();
 
         if (values.pan_card) formData.append('pan_card', values.pan_card);
         formData.append('aadhar_card', values.aadhar_card);
 
-        
+         
         if (values.pan_image && values.pan_image instanceof File) {
             formData.append('pan_image', values.pan_image);
         }
@@ -98,11 +115,19 @@ const EditProfile = () => {
         }
 
         try {
-            if (employeeDocuments.length==0){
+            if (employeeDocuments.length===0){
                 const response = await axiosInstance.post(`/employeeDocuments/`, formData, {
                     headers: {
                         'Content-Type': 'multipart/form-data',
                     },
+                });
+                console.log("This is my documents data via post",response.data)
+                setEmployeeDocuments([response.data])
+                setValues({
+                    pan_card: response.data.pan_card,
+                    aadhar_card: response.data.aadhar_card,
+                    pan_image: response.data.pan_image,
+                    aadhar_image: response.data.aadhar_image,
                 });
             }
             else{
@@ -111,10 +136,18 @@ const EditProfile = () => {
                         'Content-Type': 'multipart/form-data',
                     },
                 });
+                console.log("This is my documents data via put",response.data)
+                setEmployeeDocuments([response.data])
+                setValues({
+                    pan_card: response.data.pan_card,
+                    aadhar_card: response.data.aadhar_card,
+                    pan_image: response.data.pan_image,
+                    aadhar_image: response.data.aadhar_image,
+                });
             }
-            
+          
             Swal.fire('Success!', 'Documents  Updated Successfully!', 'success');
-            setUpdate(true)
+            
            
         } catch (error) {
             console.error('Error:', error);
@@ -305,7 +338,7 @@ const EditProfile = () => {
                                 />
                                 {touched.pan_image && errors.pan_image && <div className="invalid-feedback">{errors.pan_image}</div>}
                                 {values.pan_image && !(values.pan_image instanceof File) && (
-                                    <img src={values.pan_image} alt="Pan" style={{ width: '100px', height: '100px' }} />
+                                    <img src={`http://localhost:8000/${values.pan_image}`} alt="Pan" style={{ width: '100px', height: '100px' }} />
                                 )}
                                 <br></br>
                                 <br></br>
@@ -322,7 +355,7 @@ const EditProfile = () => {
                                 />
                                 {touched.aadhar_image && errors.aadhar_image && <div className="invalid-feedback">{errors.aadhar_image}</div>}
                                 {values.aadhar_image && !(values.aadhar_image instanceof File) && (
-                                    <img src={values.aadhar_image} alt="Aadhar" style={{ width: '100px', height: '100px' }} />
+                                    <img src={`http://localhost:8000/${values.aadhar_image}`} alt="Aadhar" style={{ width: '100px', height: '100px' }} />
                                 )}
                                 <br></br>
                                 <Button variant="primary" type="submit" disabled={isSubmitting}>

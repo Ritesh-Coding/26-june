@@ -28,9 +28,12 @@ const Profile = () => {
           headers: {
               'Content-Type': 'multipart/form-data',
           },
-      });
-      
-      setUpdate(true)
+      });       
+      //  setEmployeeData((prevData) => ({       //this will create a new temporary url and update the pic
+      //   ...prevData,
+      //   profile: URL.createObjectURL(values.profile),
+      // }));
+      setEmployeeData(response.data)
       handleClose()
       Swal.fire('Success!', 'Profile Pic Updated Successfully!', 'success');
       console.log('Success:', response.data);
@@ -48,7 +51,7 @@ const Profile = () => {
       setRelationsData(res.data["relations"][0]);
       setDocumentsData(res.data["documents"][0]);
     });
-  }, [update]);
+  }, []);
 
   console.log("hello", employeeData);
 

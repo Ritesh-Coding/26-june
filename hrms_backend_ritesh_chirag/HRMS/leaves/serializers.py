@@ -26,30 +26,32 @@ class EmployeeLeaveSerializer(serializers.ModelSerializer):
          
          if 'type' in data:             
                 leave_type = data['type']
-                checkRemainingLeaves = EmployeeLeaveAssignment.objects.filter(employee_id=user).first()
-                # print("These is my total Paid Leaves that are Approved",checkRemainingLeaves,checkCasualLeaves)
-                checkPaidLeaves = checkRemainingLeaves.remaining_paid_leave  
-                checkCasualLeaves = checkRemainingLeaves.remaining_casual_leave
-                checkSickLeaves = checkRemainingLeaves.remaining_sick_leave
-                checkUnpaidLeaves = checkRemainingLeaves.remaining_unpaid_leave
-                print(checkPaidLeaves,"-------",checkCasualLeaves,"------",checkSickLeaves)
+                checkRemainingLeaves = EmployeeLeaveAssignment.objects.filter(employee_id=user).first()            
+                print(checkRemainingLeaves)
+                if checkRemainingLeaves:
+                    checkPaidLeaves = checkRemainingLeaves.remaining_paid_leave  
+                    checkCasualLeaves = checkRemainingLeaves.remaining_casual_leave
+                    checkSickLeaves = checkRemainingLeaves.remaining_sick_leave
+                    checkUnpaidLeaves = checkRemainingLeaves.remaining_unpaid_leave
+                    print(checkPaidLeaves,"-------",checkCasualLeaves,"------",checkSickLeaves)
 
-                if leave_type == "PL":
-                    if checkPaidLeaves <= 0:
-                        raise serializers.ValidationError("Cannot applied as Paid Leaves are over")
+                    if leave_type == "PL":
+                        if checkPaidLeaves <= 0:
+                            raise serializers.ValidationError("Cannot applied as Paid Leaves are over")
+                            
+                    if leave_type == "CL":
+                        if checkCasualLeaves <= 0:
+                            raise serializers.ValidationError("Cannot applied as Casual Leaves are over") 
                         
-                if leave_type == "CL":
-                    if checkCasualLeaves <= 0:
-                        raise serializers.ValidationError("Cannot applied as Casual Leaves are over") 
-                       
-                if leave_type == "SL":
-                    if checkSickLeaves <= 0:
-                        raise serializers.ValidationError("Cannot applied as Sick Leaves are over") 
-                     
-                if leave_type == "UL":
-                    if checkUnpaidLeaves <= 0:
-                        raise serializers.ValidationError("Cannot applied as Sick Leaves are over")            
-                
+                    if leave_type == "SL":
+                        if checkSickLeaves <= 0:
+                            raise serializers.ValidationError("Cannot applied as Sick Leaves are over") 
+                        
+                    if leave_type == "UL":
+                        if checkUnpaidLeaves <= 0:
+                            raise serializers.ValidationError("Cannot applied as Sick Leaves are over")            
+                else:
+                    raise serializers.ValidationError("Cannot applied leave")  
          if 'date' in data:
             leave_date = data['date']                
      
@@ -174,32 +176,36 @@ class AdminLeaveUpdateSerializer(serializers.ModelSerializer):
 #created By Ritesh    
 class AdminLeaveSerializer(serializers.ModelSerializer):    
     status = serializers.CharField()
-    employeeDetails = serializers.SerializerMethodField()
+    # employeeDetails = serializers.SerializerMethodField()
+    
+    first_name = serializers.CharField(source='employee_id.first_name', read_only=True)
+    last_name = serializers.CharField(source='employee_id.last_name', read_only=True)
     class Meta:
         model= Leaves
-        fields = ['id','employee_id','status','date','type','status','reason','leave_day_type','employeeDetails']
-    def get_employeeDetails(self,obj):
-        employeeDetails = Employee.objects.filter(id = obj.employee_id_id).values("first_name","last_name")        
-        return employeeDetails
+        fields = ['id','employee_id','status','date','type','status','reason','leave_day_type','first_name','last_name']
+    # def get_employeeDetails(self,obj):
+    #     employeeDetails = Employee.objects.filter(id = obj.employee_id_id).values("first_name","last_name")        
+    #     return employeeDetails
     
 class LeaveDetailsSerializer(serializers.ModelSerializer):
     total_approved_leaves = serializers.SerializerMethodField()
-    employee = serializers.SerializerMethodField()
-  
+    # employee = serializers.SerializerMethodField()
+    first_name = serializers.CharField(source='employee_id.first_name', read_only=True)
+    last_name = serializers.CharField(source='employee_id.last_name', read_only=True)  
     class Meta:
         model= EmployeeLeaveAssignment
-        fields = ['id','remaining_paid_leave','remaining_unpaid_leave','remaining_casual_leave','remaining_sick_leave','total_approved_leaves','employee']
+        fields = ['id','remaining_paid_leave','remaining_unpaid_leave','remaining_casual_leave','remaining_sick_leave','total_approved_leaves','first_name','last_name']
 
     def get_total_approved_leaves(self,obj):
         # user = self.context['request'].user 
         employee_id = self.context.get('employeeId')
         checkTotalLeaves = Leaves.objects.filter(employee_id = employee_id,status="Approved").count()
         return checkTotalLeaves
-    def get_employee(self,obj):
-        # user = self.context['request'].user 
-        employee_id = self.context.get('employeeId')
-        employeeDetails = Employee.objects.filter(id = employee_id).values('id','first_name','last_name')
-        return employeeDetails
+    # def get_employee(self,obj):
+    #     # user = self.context['request'].user 
+    #     employee_id = self.context.get('employeeId')
+    #     employeeDetails = Employee.objects.filter(id = employee_id).values('id','first_name','last_name')
+    #     return employeeDetails
 
 
     

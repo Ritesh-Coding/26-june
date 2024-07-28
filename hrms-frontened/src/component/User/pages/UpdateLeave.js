@@ -13,27 +13,50 @@ const UpdateLeave = () => {
   const [requestedLeave, setRequestedLeave] = useState([]);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [requestStatus,setRequestStatus] = useState("")
+  const [startDate,setStartDate] = useState("")
+  const [endDate,setEndDate]= useState("")
   const [selectedLeave, setSelectedLeave] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const rowsPerPage = 1 ;
+  const rowsPerPage = 1;
   const axiosInstance = useAxios();
+  const [isUpdated,setIsUpdated]=useState(false)
+   
+  function myFunction() {
+    let  startDate =  document.getElementById("startDate").value ;
+    let  endDate = document.getElementById("endDate").value ;
+    if (startDate && endDate){
+      setStartDate(startDate)
+      setEndDate(endDate)
+      setCurrentPage(1)
+    }    
+  }  
 
-  const fetchRequestedLeaveData=(page)=>{
-    axiosInstance.get(`/leave?status=Pending`,{
+  const fetchRequestedLeaveData=(page,status,start_date,end_date)=>{
+    axiosInstance.get(`/leave`,{
       params :{
         page,
+        status,
+        start_date,
+        end_date
       }
     }).then((res)=>{
       console.log("these is my result",res.data)
+      setIsUpdated(false)
       setRequestedLeave(res.data["results"]);
+      if (res.data.count === 0){
+        setTotalPages(1);
+      }
+      else{
       setTotalPages(Math.ceil(res.data.count / rowsPerPage));
+      }
     })
   }
 
   useEffect(() => {
-    fetchRequestedLeaveData(currentPage)
-  }, [currentPage]);
+    fetchRequestedLeaveData(currentPage,requestStatus,startDate,endDate,isUpdated)
+  }, [currentPage,requestStatus,startDate,endDate,isUpdated]);
 
   const handleUpdate = (leave) => {
     setSelectedLeave(leave);
@@ -49,6 +72,7 @@ const UpdateLeave = () => {
     try {
       await axiosInstance.put(`/leave/${selectedLeave.id}/`, values);
       setShowUpdateModal(false);
+      setIsUpdated(true)
       // setRequestedLeave((prev) =>
       //   prev.map((leave) => (leave.id === selectedLeave.id ? { ...leave, ...values } : leave))
       // );
@@ -63,11 +87,16 @@ const UpdateLeave = () => {
       setSubmitting(false);
     }
   };
+  const handleInputChange=(event)=>{
+    setRequestStatus(event.target.value)    
+    setCurrentPage(1)  
+  }
 
   const handleDeleteSubmit = async () => {
     try {
       await axiosInstance.delete(`/leave/${selectedLeave.id}/`);
       setShowDeleteModal(false);
+      setIsUpdated(true)
       // setRequestedLeave((prev) => prev.filter((leave) => leave.id !== selectedLeave.id));
     } catch (err) {
       console.error(err);
@@ -100,6 +129,22 @@ const UpdateLeave = () => {
   return (
     <div style={{ marginLeft: '260px' }}>
       <LeavesDeatils />
+      <div style={{float:`right`}}>
+    <Button>
+        <input type="date" id="startDate" onChange={myFunction}></input>
+    </Button>
+    <Button>
+    <input type="date" id="endDate" onChange={myFunction}></input>
+    </Button> 
+
+    </div>    
+      <select className="form-select form-select mb-3" aria-label=".form-select-lg example"
+                 id="statusDropDown"  onChange={handleInputChange}>
+                      <option selected value="">Select Status</option>
+                      <option value="Approved">Approved</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Rejected">Rejected</option>
+      </select>
       <table className="table">
         <thead>
           <tr>

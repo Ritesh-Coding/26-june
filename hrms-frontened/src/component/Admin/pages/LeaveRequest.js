@@ -12,6 +12,7 @@ import Swal from 'sweetalert2';
 import SelectField from '../../../utils/SelectField';
 import { Link } from 'react-router-dom';
 // import Modal from "@material-ui/core/Modal";
+import { Pagination } from "../../../hooks/usePaginationRange";
 
 
 const validationSchema = Yup.object({
@@ -25,15 +26,37 @@ const LeaveRequest = () => {
   const dispatch = useDispatch();
   const [leaveData,setLeaveData] = useState([])
   const [update,setUpdate]=useState(false)  
-
+  const rowsPerPage = 5;
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [name,setName] = useState("")
+  const [date,setDate]= useState("")
   const axiosInstance  =  useAxios();
   dispatch(navbarTitle({ navTitle: "Leaves" }));
- 
-  useEffect(()=>{
-    axiosInstance.get(`all-leaves/?status=Pending`).then((res)=>{
-      setLeaveData(res.data)
+  const handlePageChange = (page)=>{
+    setCurrentPage(page)
+   }
+  const fetchLeavesData=async(page,name,date)=>{
+   const result =await   axiosInstance.get(`all-leaves/?status=Pending`,{
+      params:{
+        page,
+        name,
+        date
+      }
     })
-},[update])
+    if (result.data.count === 0){
+    setTotalPages(1);
+  }
+  else{
+  console.log("total count page",Math.ceil(result.data.count / rowsPerPage))
+  setTotalPages(Math.ceil(result.data.count / rowsPerPage));
+  }
+      setLeaveData(result.data["results"])
+    
+   }
+  useEffect(()=>{
+    fetchLeavesData(currentPage,name,date)
+},[update,currentPage,name,date])
   const approveRequest = (id)=>{
     console.log("Leave Request is approved")
     Swal.fire({title: 'Confirm Approve',showCancelButton: true,confirmButtonText: 'Yes',denyButtonText: 'No',
@@ -55,10 +78,17 @@ const LeaveRequest = () => {
      })} })  
     
   }
+  const handleDateChange=(event)=>{
+    setDate(event.target.value)
+  }
+  const handleNameChange=(event)=>{
+      setName(event.target.value)
+  }
   return (
     <>
     <div style={{ marginLeft: "250px" }}>  
     <Link to="/admin/all-leave">
+
     <Button variant="primary">
           All Leaves
     </Button>
@@ -69,7 +99,17 @@ const LeaveRequest = () => {
           Assign Leaves
     </Button>    
     </Link>  
-    
+    <div style={{float:`right`}}>
+        <Button>
+        <input type="date" id="date" onChange={handleDateChange}></input>
+        </Button>
+      
+        
+    </div>
+    <Button style={{float:`right`}}>
+    <input type="text" onChange={handleNameChange} placeholder='Filter With Name'></input>
+    </Button>
+
       <table class="table">
         <thead>
           <tr>
@@ -85,11 +125,11 @@ const LeaveRequest = () => {
         </thead>
         <tbody>
           
-        {leaveData.map((leave,index)=>((
+        {leaveData.length>0 ? leaveData.map((leave,index)=>((
         <tr key = {index}>
         
-          <th scope="row">{leave.employeeDetails[0]["first_name"]}</th>   
-          <th scope="row">{leave.employeeDetails[0]["last_name"]}</th>    
+          <th scope="row">{leave.first_name}</th>   
+          <th scope="row">{leave.last_name}</th>    
           <td>{leave.status}</td>    
           <td>{leave.date}</td>
           <td>{leave.type}</td>
@@ -97,10 +137,15 @@ const LeaveRequest = () => {
           <td>{leave.reason}</td>
           <td><Button onClick={()=>{approveRequest(leave.id)}}>Accept</Button ><Button  onClick={()=>{deleteRequest(leave.id)}}>Rejected</Button></td>     
       </tr>
-  )))}  
+  ))):(
+    <tr>
+    <td colSpan="5">No holiday data available</td>
+  </tr>
+  )}  
          
         </tbody>
       </table>
+      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
     </div>
     </>
   );

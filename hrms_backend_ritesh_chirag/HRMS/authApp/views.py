@@ -8,6 +8,8 @@ from .serializers import EmployeeSerializer, RegisterSerializer, ChangePasswordS
 from .permissions import IsAdminOrSelf
 from rest_framework.decorators import api_view, permission_classes, APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.pagination import PageNumberPagination
+from django.db.models import Q
 # create by chirag
 
 User = get_user_model()
@@ -16,13 +18,26 @@ class RegisterView(generics.CreateAPIView):
     queryset = Employee.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
-
+class CustomPageNumberPagination(PageNumberPagination):
+    page_size = 5
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 class EmployeeListView(generics.ListAPIView):
-    authentication_classes = [JWTAuthentication]
-    queryset = Employee.objects.all()
+    authentication_classes = [JWTAuthentication]  
+    
     serializer_class = EmployeeSerializer
     permission_classes = [permissions.AllowAny]
+    pagination_class = CustomPageNumberPagination
+    
+    def get_queryset(self):
+        queryset = Employee.objects.all()
+        search_query= self.request.query_params.get('name', None)
+        if search_query:
+                queryset=queryset.filter(
+                Q(first_name__icontains=search_query) | Q(last_name__icontains = search_query)
+             )
+        return queryset
 
 
 class EmployeeDetailView(generics.RetrieveUpdateDestroyAPIView):

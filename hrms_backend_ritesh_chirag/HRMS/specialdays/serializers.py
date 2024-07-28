@@ -8,10 +8,10 @@ from authApp.models import Employee
 class HolidaySerializer(serializers.ModelSerializer):
     class Meta:
         model = Holiday
-        fields = ['id', 'name', 'date']
+        fields = ['id', 'name', 'date','holiday_image']
 
 
 class BirthdaySerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
-        fields = ['id', 'first_name', 'last_name', 'username', 'dob']
+        fields = ['id', 'first_name', 'last_name', 'profile', 'dob']

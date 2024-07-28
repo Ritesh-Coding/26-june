@@ -46,6 +46,7 @@ const UpdateEmployee = () => {
     const [employeeRelations, setEmployeeRelations] = useState(null)
     const id = window.location.pathname.split('/')[4] 
     console.log("This is the id ",id)
+    // const BASE_URL = 'http://localhost:8000/media/';
     useEffect(() => {
         axiosInstance.get(`api/employees/${id}/`).then(
             (res) => { setBasicDetails(res.data) }      
@@ -60,7 +61,7 @@ const UpdateEmployee = () => {
     )
  
         
-    }, [update])
+    }, [])
     console.log("this is my data",employeeDocuments)
     console.log("this is my relations dATA",employeeRelations)
     const genderTypes = [
@@ -69,12 +70,24 @@ const UpdateEmployee = () => {
         { value: 'Other', label: 'Other' },
     ];
 
-    const handleSubmit = async (values, { setSubmitting, setErrors }) => {
+    const handleSubmit = async (values, { setSubmitting, setErrors,setValues }) => {
         try {
             const result = await axiosInstance.patch(`api/employees/${basicDetails.id}/`, values);
             const data = result.data;
+            setBasicDetails(data)
+            setValues({
+                username: data.username,
+                first_name:  data.first_name,
+                last_name: data.last_name ,
+                email: data.email,
+                dob: data.dob ,
+                phone_number: data.phone_number,
+                address: data.address,
+                bio:data.bio ,
+                gender:  data.gender
+            })
             Swal.fire('Success!', 'Basic Details is Updated Successfully!', 'success');
-            setUpdate(true)
+           
         } catch (err) {
             console.error(err);
             if (err.response && err.response.data && err.response.data.username) {
@@ -88,7 +101,7 @@ const UpdateEmployee = () => {
     };
 
 
-    const handleDocumentsSubmit = async (values, { setSubmitting, setErrors }) => {
+    const handleDocumentsSubmit = async (values, { setSubmitting, setErrors,setValues }) => {
         const formData = new FormData();
 
         if (values.pan_card) formData.append('pan_card', values.pan_card);
@@ -105,23 +118,37 @@ const UpdateEmployee = () => {
         }
 
         try {
-            if (employeeDocuments.length==0){
-                const response = await axiosInstance.post(`/employeeDocuments/`, formData, {
+            if (employeeDocuments.length===0){
+              const response =  await axiosInstance.post(`/employeeDocuments/?id=${id}`, formData, {
                     headers: {
                         'Content-Type': 'multipart/form-data',
                     },
                 });
+                setEmployeeDocuments([response.data])
+                setValues({
+                    pan_card: response.data.pan_card,
+                    aadhar_card: response.data.aadhar_card,
+                    pan_image: response.data.pan_image,
+                    aadhar_image: response.data.aadhar_image,
+                });
             }
             else{
-                const response = await axiosInstance.patch(`/employeeDocuments/${employeeDocuments[0]["id"]}/`, formData, {
+               const response = await axiosInstance.patch(`/employeeDocuments/${employeeDocuments[0]["id"]}/`, formData, {
                     headers: {
                         'Content-Type': 'multipart/form-data',
                     },
+                });
+                setEmployeeDocuments([response.data])
+                setValues({
+                    pan_card: response.data.pan_card,
+                    aadhar_card: response.data.aadhar_card,
+                    pan_image: response.data.pan_image,
+                    aadhar_image: response.data.aadhar_image,
                 });
             }
             
             Swal.fire('Success!', 'Documents  Updated Successfully!', 'success');
-            setUpdate(true)
+           
            
         } catch (error) {
             console.error('Error:', error);
@@ -131,17 +158,35 @@ const UpdateEmployee = () => {
         }
     };
 
-    const handleRelationsSubmit = async (values, { setSubmitting, setErrors }) => {
+    const handleRelationsSubmit = async (values, { setSubmitting, setErrors ,setValues}) => {
         console.log("this is all my values", values);
         try {
-            if (employeeRelations.length == 0) {
-                const response = await axiosInstance.post(`/companyRelations/?id=${id}`, values);
+            if (employeeRelations.length === 0) {
+             const data = await axiosInstance.post(`/companyRelations/?id=${id}`, values);
+             setEmployeeRelations([data])
+              setValues({
+                designation: data.designation,
+                department: data.department,
+                batch: data.batch ,
+                joining_date: data.joining_date,
+                probation_end_date : data.probation_end_date,
+                work_duration : data.work_duration,
+              })
             } else {
                 console.log("relations update", `/companyRelations/${employeeRelations[0]["id"]}/`);
-                const response = await axiosInstance.patch(`/companyRelations/${employeeRelations[0]["id"]}/`, values);
+              const data = await axiosInstance.patch(`/companyRelations/${employeeRelations[0]["id"]}/`, values);
+              setEmployeeRelations([data])
+              setValues({
+                designation: data.designation,
+                department: data.department,
+                batch: data.batch ,
+                joining_date: data.joining_date,
+                probation_end_date : data.probation_end_date,
+                work_duration : data.work_duration,
+              })
             }
             Swal.fire('Success!', 'Relations Updated Successfully!', 'success');
-            setUpdate(true);
+            
         } catch (error) {
             console.error('Error:', error);
             setErrors({ api: 'Failed to Update Relations' });
@@ -149,7 +194,7 @@ const UpdateEmployee = () => {
             setSubmitting(false);
         }
     };
-    
+   
     
     return (
         <div style={{ marginLeft: "260px", display: "flex" }}>
@@ -332,7 +377,7 @@ const UpdateEmployee = () => {
                                 />
                                 {touched.pan_image && errors.pan_image && <div className="invalid-feedback">{errors.pan_image}</div>}
                                 {values.pan_image && !(values.pan_image instanceof File) && (
-                                    <img src={values.pan_image} alt="Pan" style={{ width: '100px', height: '100px' }} />
+                                    <img src={`http://localhost:8000${values.pan_image}`} alt="Pan" style={{ width: '100px', height: '100px' }} />
                                 )}
                                 <br></br>
                                 <br></br>
@@ -347,9 +392,10 @@ const UpdateEmployee = () => {
                                     onBlur={handleBlur}
                                     className={touched.aadhar_image && errors.aadhar_image ? 'is-invalid' : ''}
                                 />
+                                
                                 {touched.aadhar_image && errors.aadhar_image && <div className="invalid-feedback">{errors.aadhar_image}</div>}
-                                {values.aadhar_image && !(values.aadhar_image instanceof File) && (
-                                    <img src={values.aadhar_image} alt="Aadhar" style={{ width: '100px', height: '100px' }} />
+                                {values.aadhar_image && (
+                                    <img src={`http://localhost:8000/${values.aadhar_image}`} alt="Aadhar" style={{ width: '100px', height: '100px' }} />
                                 )}
                                 <br></br>
                                 <Button variant="primary" type="submit" disabled={isSubmitting}>

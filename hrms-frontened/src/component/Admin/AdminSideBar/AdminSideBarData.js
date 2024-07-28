@@ -25,8 +25,8 @@ export const AdminSidebarData = [
     icon: <FaIcons.FaNoteSticky />
   },
   {
-    title: 'Expense Claims',
-    path: '/admin/claims',
+    title: 'Holidays',
+    path: '/admin/holidays',
     icon: <FaIcons.FaCalculator />
   },
   {

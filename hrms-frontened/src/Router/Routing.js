@@ -27,6 +27,7 @@ import UpdateEmployee from '../component/Admin/pages/UpdateEmployee';
 import AllLeaves from '../component/Admin/pages/AllLeaves';
 import LeaveRequest from '../component/Admin/pages/LeaveRequest';
 import AssignLeave from '../component/Admin/pages/AssignLeave';
+import Holidays from '../component/Admin/pages/Holidays';
 const router  = createBrowserRouter(
   createRoutesFromElements(
     <>
@@ -55,7 +56,7 @@ const router  = createBrowserRouter(
           <Route path="/admin/sensation" element={<Sensation />} />
           <Route path="/admin/committee" element={<Committee />} />
           <Route path="/admin/companyPolicy" element={<CompanyPolicy />} />
-          <Route path="/admin/claims" element={<Claims />} />
+          <Route path="/admin/holidays" element={<Holidays />} />
           <Route path="/admin/leaves" element={<LeaveRequest />} />
           <Route path="/admin/attendance" element={<Employee />}/>       
           <Route path="/admin/profile" element={<Profile />} />
